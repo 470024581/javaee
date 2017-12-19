@@ -1,0 +1,16 @@
+package com.drools.demo.point
+
+import com.drools.demo.point.PointDomain;
+import java.util.ArrayList;
+import java.util.List;
+
+rule subBackMondyPoint
+	// 退货金额大于100，扣减100分
+	salience 9
+	lock-on-active true
+	when
+		$pointDomain : PointDomain(backMondy >= 100)
+	then
+		$pointDomain.addPoint($pointDomain);
+		$pointDomain.recordPointLog($pointDomain.getUserName(),"subBackMondyPoint");
+end

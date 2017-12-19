@@ -1,0 +1,8 @@
+package com.test.drools;
+
+rule "Rule 01"   
+    when
+        String (toString=="jack") //含义：如果插入的Facts对象是String类型，且调用其toString()方法后的值等于"jack"，则为true
+    then
+        System.out.println("HelloWorld！");
+end

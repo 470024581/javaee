@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+ <beans xmlns="http://www.springframework.org/schema/beans"  
+	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xmlns:context="http://www.springframework.org/schema/context"  
+	  xmlns:aop="http://www.springframework.org/schema/aop"
+	  xmlns:tx="http://www.springframework.org/schema/tx"
+	  xsi:schemaLocation="
+	  http://www.springframework.org/schema/beans  
+	  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+	  http://www.springframework.org/schema/aop  
+	  http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+	  http://www.springframework.org/schema/tx  
+	  http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	  http://www.springframework.org/schema/context   
+      http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+  	 <!-- 采用注释的方式配置bean -->   
+     <context:annotation-config />   
+     
+     <!-- 配置要扫描的包 -->   
+     <context:component-scan base-package="service.jms"/>
+ 
+     <bean id="connectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+         <property name="connectionFactory">
+             <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                 <property name="brokerURL">
+                     <value>tcp://localhost:61616</value>
+                 </property>
+                 <property name="useAsyncSend">
+                     <value>true</value>
+                 </property>
+             </bean>
+         </property>
+     </bean>
+ 
+     <bean id="connectionFactory_1" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+         <property name="connectionFactory">
+             <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                 <property name="brokerURL">
+                 	<!-- 可以是其他的broker地址 -->
+                    <value>tcp://localhost:61616</value>
+                 </property>
+                 <property name="useAsyncSend">
+                     <value>true</value>
+                 </property>
+             </bean>
+         </property>
+     </bean>
+ 
+     <!-- 发送消息的目的地（一个队列） -->
+     <bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
+         <!-- 设置消息队列的名字 -->
+         <constructor-arg index="0" value="activeMQQueue" />
+     </bean>
+     
+     <!-- 消息转换 -->
+     <bean id="messageConverter" class="service.jms.ObjectMessageConverter"/>
+ 
+     <!-- 消费者 -->
+     <bean id="queueConsumer" class="service.jms.MessageConsumer"/>
+     <bean id="queueListener" class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+         <constructor-arg ref="queueConsumer"/>
+         <property name="defaultListenerMethod" value="receive"/>
+         <property name="messageConverter" ref="messageConverter"/>
+     </bean>
+     <!-- 监听 -->
+     <bean id="queueListenerContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+         <property name="connectionFactory" ref="connectionFactory"/>
+         <property name="destination" ref="destination" />
+         <property name="messageListener" ref="queueListener" />
+         <!-- 配置多个消费者，可以是具体数值，也可以是数值区间，根据消息的规模来确定消费者的多少 -->
+         <property name="concurrency" value="4-8"></property>
+     </bean>
+     
+     <!-- 生产消息配置 -->
+     <bean id="queueProducer" class="service.jms.MessageProducer">
+         <property name="destination" ref="destination"/>
+         <property name="jmsTemplate">  
+             <list>  
+                 <ref bean="jmsTemplate_1" /> 
+                 <ref bean="jmsTemplate_2" /> 
+             </list>  
+         </property>
+     </bean>
+     
+     <!-- 配置JMS模版 -->
+     <bean id="jmsTemplate_1" class="org.springframework.jms.core.JmsTemplate">
+         <property name="connectionFactory" ref="connectionFactory" />
+         <property name="messageConverter" ref="messageConverter" />
+     </bean>
+     
+     <bean id="jmsTemplate_2" class="org.springframework.jms.core.JmsTemplate">
+         <property name="connectionFactory" ref="connectionFactory_1" />
+         <property name="messageConverter" ref="messageConverter" />
+     </bean>
+     
+ </beans>
